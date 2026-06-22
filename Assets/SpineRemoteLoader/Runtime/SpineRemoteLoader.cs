@@ -8,9 +8,16 @@ using UnityEngine;
 
 namespace ZStudio.SpineRemoteLoader {
     public sealed class SpineRemoteLoader : ISpineRemoteLoader {
-        private static SpineRemoteLoader s_Instance;
+        private static SpineRemoteLoader s_Shared;
 
-        public static SpineRemoteLoader Instance => s_Instance ??= new SpineRemoteLoader();
+        /// <summary>
+        /// 全局共享实例，方便快速调用。可被替换（set），便于注入自定义后端或在测试中替换。
+        /// 业务层应尽量依赖 <see cref="ISpineRemoteLoader"/> 接口而非直接耦合此静态访问。
+        /// </summary>
+        public static SpineRemoteLoader Shared {
+            get => s_Shared ??= new SpineRemoteLoader();
+            set => s_Shared = value;
+        }
 
         private readonly Dictionary<string, SpineRemoteCacheEntry> m_Cache = new();
         private readonly Dictionary<string, UniTask<SpineRemoteCacheEntry>> m_DownloadingTasks = new();
@@ -27,6 +34,14 @@ namespace ZStudio.SpineRemoteLoader {
         public ISpineDownloader Downloader {
             get => m_Downloader;
             set => m_Downloader = value ?? new UnityWebRequestSpineDownloader();
+        }
+
+        // 关闭域重载（Enter Play Mode without Domain Reload）时，静态状态不会自动清空，
+        // 这里在进入播放模式时主动重置共享实例，避免缓存残留已销毁对象的引用。
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSharedOnEnterPlayMode() {
+            s_Shared?.ReleaseAll();
+            s_Shared = null;
         }
 
         public async UniTask<SpineRemoteLoadResult> LoadAndPlayAsync(SpineRemoteLoadOptions options) {

@@ -52,7 +52,7 @@ namespace ZStudio.SpineRemoteLoader {
                 cancellationToken = this.GetCancellationTokenOnDestroy()
             };
 
-            LastResult = await SpineRemoteLoader.Instance.LoadAndPlayAsync(options);
+            LastResult = await SpineRemoteLoader.Shared.LoadAndPlayAsync(options);
 
             if (!LastResult.success && !LastResult.canceled) {
                 SpineRemoteLog.Error($"播放失败: {LastResult.error}");
@@ -63,13 +63,13 @@ namespace ZStudio.SpineRemoteLoader {
 
         public void ReleaseCache() {
             if (!string.IsNullOrEmpty(LastResult?.cacheKey)) {
-                SpineRemoteLoader.Instance.ReleaseCache(LastResult.cacheKey);
+                SpineRemoteLoader.Shared.ReleaseCache(LastResult.cacheKey);
             }
         }
 
         private void ReleaseCurrentInstance() {
             if (LastResult is { success: true }) {
-                SpineRemoteLoader.Instance.Release(LastResult);
+                SpineRemoteLoader.Shared.Release(LastResult);
                 LastResult = null;
             }
         }

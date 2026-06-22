@@ -55,6 +55,18 @@ URL 传**不含扩展名**的基础路径，库会按以下规则拉取：
 
 > 图集页图片与 `.atlas` 同目录；`.atlas` 内声明几张 `.png` 就会下载几张。
 
+## 访问方式
+
+库同时支持两种用法，按需选择：
+
+- **共享实例（便捷）**：`SpineRemoteLoader.Shared`，全局唯一、跨模块复用同一份缓存。`Shared` 可被替换（`SpineRemoteLoader.Shared = ...`），便于注入自定义后端或在测试中替换。进入 Play Mode 时会自动重置，兼容“关闭域重载”的工程设置。
+- **独立实例（推荐用于可测试/多缓存域）**：`new SpineRemoteLoader(downloader)`，依赖 `ISpineRemoteLoader` 接口，DI 友好。业务层建议依赖接口而非直接耦合 `Shared`。
+
+```csharp
+ISpineRemoteLoader loader = new SpineRemoteLoader(myDownloader);
+await loader.LoadAndPlayAsync(options);
+```
+
 ## 快速开始
 
 ### 代码调用
@@ -71,7 +83,7 @@ public sealed class Demo : MonoBehaviour {
     private SpineRemoteLoadResult m_Result;
 
     private async UniTaskVoid Start() {
-        m_Result = await SpineRemoteLoader.Instance.LoadAndPlayAsync(new SpineRemoteLoadOptions {
+        m_Result = await SpineRemoteLoader.Shared.LoadAndPlayAsync(new SpineRemoteLoadOptions {
             url = "https://cdn.example.com/spine/hero",
             parent = m_Parent,
             animationName = "idle",
@@ -89,7 +101,7 @@ public sealed class Demo : MonoBehaviour {
 
     private void OnDestroy() {
         // 销毁此实例的运行时资源（不影响缓存）
-        SpineRemoteLoader.Instance.Release(m_Result);
+        SpineRemoteLoader.Shared.Release(m_Result);
     }
 }
 ```
@@ -101,7 +113,7 @@ public sealed class Demo : MonoBehaviour {
 ### 预热
 
 ```csharp
-await SpineRemoteLoader.Instance.PrewarmAsync(new SpineRemoteLoadOptions {
+await SpineRemoteLoader.Shared.PrewarmAsync(new SpineRemoteLoadOptions {
     url = "https://cdn.example.com/spine/hero"
 });
 ```
@@ -131,7 +143,7 @@ public sealed class BestHttpSpineDownloader : ISpineDownloader {
 }
 
 // 注入（重试逻辑由库统一处理，实现里只需完成一次请求）
-SpineRemoteLoader.Instance.Downloader = new BestHttpSpineDownloader();
+SpineRemoteLoader.Shared.Downloader = new BestHttpSpineDownloader();
 ```
 
 ## 日志

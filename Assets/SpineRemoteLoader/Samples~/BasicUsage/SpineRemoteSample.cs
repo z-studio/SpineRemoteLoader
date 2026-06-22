@@ -20,7 +20,7 @@ namespace ZStudio.SpineRemoteLoader.Samples {
 
             var progress = new System.Progress<float>(p => SpineRemoteLog.Info($"加载进度: {p:P0}"));
 
-            m_Result = await SpineRemoteLoader.Instance.LoadAndPlayAsync(new SpineRemoteLoadOptions {
+            m_Result = await SpineRemoteLoader.Shared.LoadAndPlayAsync(new SpineRemoteLoadOptions {
                 url = m_Url,
                 parent = m_Parent != null ? m_Parent : transform,
                 animationName = m_AnimationName,
@@ -36,7 +36,7 @@ namespace ZStudio.SpineRemoteLoader.Samples {
         }
 
         private void OnDestroy() {
-            SpineRemoteLoader.Instance.Release(m_Result);
+            SpineRemoteLoader.Shared.Release(m_Result);
         }
     }
 }
