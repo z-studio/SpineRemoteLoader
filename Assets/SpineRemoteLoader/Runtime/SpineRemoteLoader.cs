@@ -274,10 +274,11 @@ namespace ZStudio.SpineRemoteLoader {
 
             for (var i = 0; i < pageNames.Count; i++) {
                 var pageName = pageNames[i];
+                var pageUrl = ResolvePageUrl(options, baseDir, pageName, i);
 
                 var pageBytes = await SpineRemoteDownloader.DownloadBytesAsync(
                     downloader,
-                    $"{baseDir}{pageName}.png",
+                    pageUrl,
                     options.timeoutSeconds,
                     options.retryCount,
                     options.retryIntervalSeconds,
@@ -485,6 +486,16 @@ namespace ZStudio.SpineRemoteLoader {
             var trimmed = url.TrimEnd('/');
             var lastSlash = trimmed.LastIndexOf('/');
             return lastSlash >= 0 ? trimmed.Substring(0, lastSlash + 1) : string.Empty;
+        }
+
+        private static string ResolvePageUrl(SpineRemoteLoadOptions options, string baseDir, string pageName, int index) {
+            var custom = options.pageImageUrls;
+
+            if (custom != null && index < custom.Length && !string.IsNullOrEmpty(custom[index])) {
+                return custom[index];
+            }
+
+            return $"{baseDir}{pageName}.png";
         }
 
         private static string BuildCacheKey(SpineRemoteLoadOptions options) {

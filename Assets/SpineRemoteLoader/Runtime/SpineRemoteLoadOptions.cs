@@ -7,6 +7,14 @@ namespace ZStudio.SpineRemoteLoader {
         /// <summary>资源基础 URL，不含扩展名。例如 https://cdn.example.com/spine/hero</summary>
         public string url;
 
+        /// <summary>
+        /// 可选：自定义图集页图片的下载 URL（按 atlas 中页的顺序）。
+        /// 某一项非空时，该页图片从指定 URL 下载，否则回退到内部拼接的 {baseDir}{页名}.png。
+        /// 仅改变"从哪里下载"，纹理名仍取 atlas 中声明的页名，以保证 Spine 正确绑定。
+        /// 适用于服务器上 png 文件名与 atlas 声明页名不一致的场景（如旧资源把 png 挂在 {url}.png）。
+        /// </summary>
+        public string[] pageImageUrls;
+
         /// <summary>实例挂载父节点</summary>
         public Transform parent;
 
