@@ -1,0 +1,29 @@
+{
+  "name": "com.zstudio.spine-remote-loader",
+  "version": "1.0.0",
+  "displayName": "SpineRemoteLoader",
+  "description": "通用 Spine 远程资源动态下载与播放库：支持 SkeletonGraphic / SkeletonAnimation、多图集、可插拔下载后端、断点重试、取消与进度回调。",
+  "unity": "6000.0",
+  "license": "MIT",
+  "author": {
+    "name": "ZStudio"
+  },
+  "keywords": [
+    "spine",
+    "animation",
+    "remote",
+    "download",
+    "runtime"
+  ],
+  "dependencies": {
+    "com.esotericsoftware.spine.spine-unity": "4.2.0",
+    "com.cysharp.unitask": "2.5.0"
+  },
+  "samples": [
+    {
+      "displayName": "Basic Usage",
+      "description": "演示如何下载并播放远程 Spine 动画。",
+      "path": "Samples~/BasicUsage"
+    }
+  ]
+}

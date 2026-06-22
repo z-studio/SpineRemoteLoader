@@ -1,0 +1,18 @@
+{
+    "name": "SpineRemoteLoader",
+    "rootNamespace": "ZStudio",
+    "references": [
+        "UniTask",
+        "spine-unity",
+        "spine-csharp"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

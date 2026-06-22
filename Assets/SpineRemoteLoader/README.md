@@ -1,0 +1,146 @@
+# SpineRemoteLoader
+
+通用的 Unity Spine 远程资源**动态下载与播放**库。把一组 Spine 导出文件（`.skel`/`.json` + `.atlas` + 一张或多张 `.png`）放到 CDN，运行时按 URL 拉取、缓存并播放，无需打进包体。
+
+## 特性
+
+- **两种渲染模式**：UI（`SkeletonGraphic`）与场景（`SkeletonAnimation`）
+- **两种骨骼格式**：二进制 `.skel` 与文本 `.json`
+- **多图集**：自动解析 `.atlas` 中的所有页并按页名下载、匹配
+- **内存缓存**：避免重复下载与构建，支持并发去重
+- **可插拔下载后端**：默认 `UnityWebRequest`，可注入自定义实现（如 Best.HTTP）
+- **健壮网络层**：超时、失败重试、`CancellationToken` 取消、进度回调
+- **正确的资源生命周期**：实例资源与共享资源分离，引用计数释放，无泄漏
+- **PMA 自适应**：根据 `.atlas` 的 `pma` 字段自动设置预乘 Alpha
+- **零侵入**：仅依赖 `spine-unity` 与 `UniTask`，不绑定任何业务框架
+
+## 依赖
+
+- `com.esotericsoftware.spine.spine-unity` 4.2+
+- `com.cysharp.unitask` 2.5+
+- Unity 6000.0+
+
+## 安装
+
+### Git UPM（推荐）
+
+在目标项目 `Packages/manifest.json` 中添加：
+
+```json
+{
+  "dependencies": {
+    "com.zstudio.spine-remote-loader": "https://github.com/z-studio/SpineRemoteLoader.git?path=Assets/SpineRemoteLoader"
+  }
+}
+```
+
+### 本地 UPM
+
+将本包文件夹放入 `Packages/com.zstudio.spine-remote-loader/`（文件夹名与 `package.json` 的 `name` 一致）。
+
+### 拷贝到 Assets
+
+将整个 `SpineRemoteLoader` 文件夹放入 `Assets/` 下即可，Unity 会按 `asmdef` 自动编译。
+
+
+## 资源约定
+
+URL 传**不含扩展名**的基础路径，库会按以下规则拉取：
+
+```
+{url}.skel        # 或 {url}.json
+{url}.atlas
+{baseDir}/{pageName}.png   # pageName 来自 atlas 内的页声明
+```
+
+> 图集页图片与 `.atlas` 同目录；`.atlas` 内声明几张 `.png` 就会下载几张。
+
+## 快速开始
+
+### 代码调用
+
+```csharp
+using ZStudio.SpineRemoteLoader;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+
+public sealed class Demo : MonoBehaviour {
+    [SerializeField] 
+    private Transform m_Parent;
+
+    private SpineRemoteLoadResult m_Result;
+
+    private async UniTaskVoid Start() {
+        m_Result = await SpineRemoteLoader.Instance.LoadAndPlayAsync(new SpineRemoteLoadOptions {
+            url = "https://cdn.example.com/spine/hero",
+            parent = m_Parent,
+            animationName = "idle",
+            loop = true,
+            renderMode = ESpineRenderMode.Graphic,
+            format = ESpineSkeletonFormat.Binary,
+            cancellationToken = this.GetCancellationTokenOnDestroy(),
+            progress = new System.Progress<float>(p => Debug.Log($"加载进度 {p:P0}"))
+        });
+
+        if (!m_Result.success) {
+            Debug.LogError(m_Result.error);
+        }
+    }
+
+    private void OnDestroy() {
+        // 销毁此实例的运行时资源（不影响缓存）
+        SpineRemoteLoader.Instance.Release(m_Result);
+    }
+}
+```
+
+### 组件方式
+
+把 `SpineRemotePlayer` 挂到物体上，在 Inspector 填 URL / 动画名，勾选 `Play On Awake`。组件销毁时会自动取消下载并释放实例资源。
+
+### 预热
+
+```csharp
+await SpineRemoteLoader.Instance.PrewarmAsync(new SpineRemoteLoadOptions {
+    url = "https://cdn.example.com/spine/hero"
+});
+```
+
+## 缓存与释放
+
+| 操作 | 说明 |
+|---|---|
+| `Release(result)` | 销毁单个实例的资源，递减引用计数 |
+| `ReleaseCache(cacheKey)` | 释放内存缓存与共享纹理；若仍被实例引用则延迟到引用归零 |
+| `ReleaseAll()` | 释放全部内存缓存 |
+
+`cacheKey` 由 `url` + `format` 生成，可从 `SpineRemoteLoadResult.cacheKey` 取得。
+
+> 本库只做内存缓存，不落盘。若需要离线/跨启动复用，请在自定义 `ISpineDownloader` 中接入你自己的下载与缓存方案。
+
+## 自定义下载后端
+
+实现 `ISpineDownloader` 并注入，即可替换默认的 `UnityWebRequest`（例如复用项目里的 Best.HTTP）：
+
+```csharp
+public sealed class BestHttpSpineDownloader : ISpineDownloader {
+    public async UniTask<byte[]> GetBytesAsync(string url, int timeoutSeconds, CancellationToken ct) {
+        // 用 Best.HTTP 发起请求，失败返回 null，取消时抛 OperationCanceledException
+        ...
+    }
+}
+
+// 注入（重试逻辑由库统一处理，实现里只需完成一次请求）
+SpineRemoteLoader.Instance.Downloader = new BestHttpSpineDownloader();
+```
+
+## 日志
+
+```csharp
+SpineRemoteLog.Level = ESpineLogLevel.Verbose; // 默认 Warning
+```
+
+## 已知限制
+
+- 仅支持 `.png` 图集页（与 spine-unity 运行时一致）。
+- 直通 Alpha（straight-alpha）的图集在 `SkeletonAnimation` 模式下可能需要通过 `options.spineShader` 指定对应 shader。

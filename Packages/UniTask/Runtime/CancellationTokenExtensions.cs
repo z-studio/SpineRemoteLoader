@@ -1,0 +1,157 @@
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+using System;
+using System.Runtime.CompilerServices;
+using System.Threading;
+
+namespace Cysharp.Threading.Tasks {
+    public static class CancellationTokenExtensions {
+        private static readonly Action<object> s_CancellationTokenCallback = Callback;
+        private static readonly Action<object> s_DisposeCallback = DisposeCallback;
+
+        public static CancellationToken ToCancellationToken(this UniTask task) {
+            var cts = new CancellationTokenSource();
+            ToCancellationTokenCore(task, cts).Forget();
+            return cts.Token;
+        }
+
+        public static CancellationToken ToCancellationToken(this UniTask task, CancellationToken linkToken) {
+            if (linkToken.IsCancellationRequested) {
+                return linkToken;
+            }
+
+            if (!linkToken.CanBeCanceled) {
+                return ToCancellationToken(task);
+            }
+
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(linkToken);
+            ToCancellationTokenCore(task, cts).Forget();
+
+            return cts.Token;
+        }
+
+        public static CancellationToken ToCancellationToken<T>(this UniTask<T> task) {
+            return ToCancellationToken(task.AsUniTask());
+        }
+
+        public static CancellationToken ToCancellationToken<T>(this UniTask<T> task, CancellationToken linkToken) {
+            return ToCancellationToken(task.AsUniTask(), linkToken);
+        }
+
+        static async UniTaskVoid ToCancellationTokenCore(UniTask task, CancellationTokenSource cts) {
+            try {
+                await task;
+            } catch (Exception ex) {
+                UniTaskScheduler.PublishUnobservedTaskException(ex);
+            }
+
+            cts.Cancel();
+            cts.Dispose();
+        }
+
+        public static (UniTask, CancellationTokenRegistration) ToUniTask(this CancellationToken cancellationToken) {
+            if (cancellationToken.IsCancellationRequested) {
+                return (UniTask.FromCanceled(cancellationToken), default(CancellationTokenRegistration));
+            }
+
+            var promise = new UniTaskCompletionSource();
+
+            return (promise.Task,
+                    cancellationToken.RegisterWithoutCaptureExecutionContext(s_CancellationTokenCallback, promise));
+        }
+
+        private static void Callback(object state) {
+            var promise = (UniTaskCompletionSource)state;
+            promise.TrySetResult();
+        }
+
+        public static CancellationTokenAwaitable WaitUntilCanceled(this CancellationToken cancellationToken) {
+            return new CancellationTokenAwaitable(cancellationToken);
+        }
+
+        public static CancellationTokenRegistration RegisterWithoutCaptureExecutionContext(
+            this CancellationToken cancellationToken,
+            Action callback
+        ) {
+            var restoreFlow = false;
+
+            if (!ExecutionContext.IsFlowSuppressed()) {
+                ExecutionContext.SuppressFlow();
+                restoreFlow = true;
+            }
+
+            try {
+                return cancellationToken.Register(callback, false);
+            } finally {
+                if (restoreFlow) {
+                    ExecutionContext.RestoreFlow();
+                }
+            }
+        }
+
+        public static CancellationTokenRegistration RegisterWithoutCaptureExecutionContext(
+            this CancellationToken cancellationToken,
+            Action<object> callback,
+            object state
+        ) {
+            var restoreFlow = false;
+
+            if (!ExecutionContext.IsFlowSuppressed()) {
+                ExecutionContext.SuppressFlow();
+                restoreFlow = true;
+            }
+
+            try {
+                return cancellationToken.Register(callback, state, false);
+            } finally {
+                if (restoreFlow) {
+                    ExecutionContext.RestoreFlow();
+                }
+            }
+        }
+
+        public static CancellationTokenRegistration AddTo(
+            this IDisposable disposable,
+            CancellationToken cancellationToken
+        ) {
+            return cancellationToken.RegisterWithoutCaptureExecutionContext(s_DisposeCallback, disposable);
+        }
+
+        private static void DisposeCallback(object state) {
+            var d = (IDisposable)state;
+            d.Dispose();
+        }
+    }
+
+    public struct CancellationTokenAwaitable {
+        private CancellationToken m_CancellationToken;
+
+        public CancellationTokenAwaitable(CancellationToken cancellationToken) {
+            m_CancellationToken = cancellationToken;
+        }
+
+        public Awaiter GetAwaiter() {
+            return new Awaiter(m_CancellationToken);
+        }
+
+        public struct Awaiter : ICriticalNotifyCompletion {
+            private CancellationToken m_InnerCancellationToken;
+
+            public Awaiter(CancellationToken cancellationToken) {
+                m_InnerCancellationToken = cancellationToken;
+            }
+
+            public bool IsCompleted => !m_InnerCancellationToken.CanBeCanceled || m_InnerCancellationToken.IsCancellationRequested;
+
+            public void GetResult() { }
+
+            public void OnCompleted(Action continuation) {
+                UnsafeOnCompleted(continuation);
+            }
+
+            public void UnsafeOnCompleted(Action continuation) {
+                m_InnerCancellationToken.RegisterWithoutCaptureExecutionContext(continuation);
+            }
+        }
+    }
+}
