@@ -100,6 +100,10 @@ namespace ZStudio.SpineRemoteLoader {
         }
 
         public SpineRemoteLoadResult CreateInstance(string cacheKey, SpineRemoteLoadOptions options) {
+            if (options == null) {
+                return SpineRemoteLoadResult.Fail("options 不能为空", cacheKey);
+            }
+
             if (!m_Cache.TryGet(cacheKey, out var entry)) {
                 return SpineRemoteLoadResult.Fail($"缓存不存在: {cacheKey}", cacheKey);
             }

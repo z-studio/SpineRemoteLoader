@@ -29,7 +29,7 @@
 ```json
 {
   "dependencies": {
-    "com.zstudio.spine-remote-loader": "https://github.com/z-studio/SpineRemoteLoader.git?path=Assets/SpineRemoteLoader"
+    "com.zstudio.spineremoteloader": "https://github.com/z-studio/SpineRemoteLoader.git?path=Assets/SpineRemoteLoader"
   }
 }
 ```
@@ -50,7 +50,7 @@ URL 传**不含扩展名**的基础路径，库会按以下规则拉取：
 ```
 {url}.skel        # 或 {url}.json
 {url}.atlas
-{baseDir}/{pageName}.png   # pageName 来自 atlas 内的页声明
+{baseDir}{pageName}.png   # baseDir 为 url 所在目录（含尾部 /）；pageName 来自 atlas 内的页声明
 ```
 
 > 图集页图片与 `.atlas` 同目录；`.atlas` 内声明几张 `.png` 就会下载几张。
