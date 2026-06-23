@@ -29,6 +29,10 @@ namespace ZStudio.SpineRemoteLoader {
         [SerializeField]
         private bool m_UseMemoryCache = true;
 
+        [SerializeField]
+        [Tooltip("可选：自定义各图集页图片的下载 URL（按 atlas 页顺序）。留空则按内部规则拼接。")]
+        private string[] m_PageImageUrls;
+
         public SpineRemoteLoadResult LastResult { get; private set; }
 
         private void Awake() {
@@ -48,6 +52,7 @@ namespace ZStudio.SpineRemoteLoader {
                 renderMode = m_RenderMode,
                 format = m_Format,
                 useMemoryCache = m_UseMemoryCache,
+                pageImageUrls = m_PageImageUrls != null && m_PageImageUrls.Length > 0 ? m_PageImageUrls : null,
                 progress = progress,
                 cancellationToken = this.GetCancellationTokenOnDestroy()
             };

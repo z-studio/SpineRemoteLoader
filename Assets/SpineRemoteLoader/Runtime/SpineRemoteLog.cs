@@ -15,6 +15,7 @@ namespace ZStudio.SpineRemoteLoader {
     public static class SpineRemoteLog {
         private const string k_Tag = "[SpineRemoteLoader]";
 
+        /// <summary>输出等级，默认 <see cref="ESpineLogLevel.Warning"/>。</summary>
         public static ESpineLogLevel sLevel = ESpineLogLevel.Warning;
 
         public static void Verbose(string message) {

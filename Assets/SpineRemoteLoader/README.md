@@ -132,9 +132,13 @@ await SpineRemoteLoader.Shared.PrewarmAsync(new SpineRemoteLoadOptions {
 | `ReleaseCache(cacheKey)` | 释放内存缓存与共享纹理；若仍被实例引用则延迟到引用归零 |
 | `ReleaseAll()` | 释放全部内存缓存 |
 
-`cacheKey` 由 `url` + `format` 生成，可从 `SpineRemoteLoadResult.cacheKey` 取得。
+`cacheKey` 覆盖所有影响共享条目内容的字段（`url` + `format` + `pmaMode` + `pageImageUrls`），可从 `SpineRemoteLoadResult.cacheKey` 取得。
 
 > 本库只做内存缓存，不落盘。若需要离线/跨启动复用，请在自定义 `ISpineDownloader` 中接入你自己的下载与缓存方案。
+
+> **引用计数**：缓存条目的共享资源（纹理/文本）以引用计数管理。缓存自身持有 1 个引用，每个存活实例 +1；`Release` 实例与 `ReleaseCache` 各释放一份，归零时才真正销毁。因此可安全地"先 `ReleaseCache` 标记淘汰，待最后一个实例销毁后自动回收"。
+
+> **线程模型**：本库仅支持在 **主线程** 调用（内部缓存字典无锁，且 Unity 对象创建必须在主线程）。
 
 ## 自定义下载后端
 

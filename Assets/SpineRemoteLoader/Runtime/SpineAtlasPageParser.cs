@@ -2,9 +2,13 @@ using System.Collections.Generic;
 
 namespace ZStudio.SpineRemoteLoader {
     /// <summary>
-    /// 解析 .atlas 文件，提取其中引用的图集页文件名。
-    /// 与 spine-unity 内部 <c>SpineAtlasAsset.CreateRuntimeInstance</c> 的解析规则保持一致：
-    /// 页名为以 .png 结尾、且不含冒号的行（去掉扩展名）。
+    /// 解析 .atlas 文件，提取其中引用的图集页文件名（用于决定下载哪些 png）。
+    ///
+    /// 重要：这里的页名规则必须与真正的消费者 <c>spine-unity</c> 的
+    /// <c>SpineAtlasAsset.CreateRuntimeInstance(TextAsset, Texture2D[], ...)</c> 完全一致——
+    /// 后者内部同样以「行以 .png 结尾」为页头、并按去扩展名后的名字（忽略大小写）匹配 <c>Texture2D.name</c>。
+    /// 因此本解析器刻意采用相同的朴素规则；切勿改成"更聪明/更通用"的解析（如 spine 原生 Atlas 的空行分隔规则），
+    /// 否则会与 CreateRuntimeInstance 的页名集合脱钩，触发 "Could not find matching atlas page" 异常。
     /// </summary>
     public static class SpineAtlasPageParser {
         /// <summary>返回不含扩展名的页名列表，按出现顺序。</summary>
