@@ -24,7 +24,7 @@ namespace ZStudio.SpineRemoteLoader {
         }
 
         private readonly SpineRemoteCache m_Cache = new();
-        private readonly Dictionary<string, UniTask<SpineRemoteCacheEntry>> m_DownloadingTasks = new();
+        private readonly Dictionary<string, UniTaskCompletionSource<SpineRemoteCacheEntry>> m_DownloadingTasks = new();
 
         private ISpineDownloader m_Downloader;
         private SpineRemoteFetcher m_Fetcher;
@@ -160,22 +160,31 @@ namespace ZStudio.SpineRemoteLoader {
                 return cached;
             }
 
+            // 同一 cacheKey 正在下载时，复用同一个完成源。
+            // 用 UniTaskCompletionSource 而非共享 UniTask：普通 UTCS 原生支持多个并发 await，
+            // 不受 UniTask 版本对 Preserve() 并发续延支持差异的影响。
             if (m_DownloadingTasks.TryGetValue(cacheKey, out var inFlight)) {
-                return await inFlight;
+                return await inFlight.Task;
             }
 
-            // Preserve() 允许同一下载任务被多个并发调用方安全 await。
-            var task = BuildEntryInternalAsync(options, cacheKey).Preserve();
-            m_DownloadingTasks[cacheKey] = task;
+            var tcs = new UniTaskCompletionSource<SpineRemoteCacheEntry>();
+            m_DownloadingTasks[cacheKey] = tcs;
 
             try {
-                var entry = await task;
+                var entry = await BuildEntryInternalAsync(options, cacheKey);
 
                 if (entry != null && options.useMemoryCache && !m_Cache.Contains(cacheKey)) {
                     m_Cache.Add(entry);
                 }
 
+                tcs.TrySetResult(entry);
                 return entry;
+            } catch (OperationCanceledException) {
+                tcs.TrySetCanceled();
+                throw;
+            } catch (Exception e) {
+                tcs.TrySetException(e);
+                throw;
             } finally {
                 m_DownloadingTasks.Remove(cacheKey);
             }
