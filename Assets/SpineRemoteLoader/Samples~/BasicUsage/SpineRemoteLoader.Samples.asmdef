@@ -3,7 +3,9 @@
     "rootNamespace": "ZStudio",
     "references": [
         "SpineRemoteLoader",
-        "UniTask"
+        "UniTask",
+        "spine-csharp",
+        "spine-unity"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
