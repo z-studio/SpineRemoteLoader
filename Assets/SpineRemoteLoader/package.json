@@ -1,6 +1,6 @@
 {
   "name": "com.zstudio.spineremoteloader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "SpineRemoteLoader",
   "description": "通用 Spine 远程资源动态下载与播放库：支持 SkeletonGraphic / SkeletonAnimation、多图集、可插拔下载后端、断点重试、取消与进度回调。",
   "unity": "6000.0",
