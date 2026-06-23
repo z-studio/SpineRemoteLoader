@@ -36,7 +36,7 @@
 
 ### 本地 UPM
 
-将本包文件夹放入 `Packages/com.zstudio.spine-remote-loader/`（文件夹名与 `package.json` 的 `name` 一致）。
+将本包文件夹放入 `Packages/com.zstudio.spineremoteloader/`（文件夹名与 `package.json` 的 `name` 一致）。
 
 ### 拷贝到 Assets
 
