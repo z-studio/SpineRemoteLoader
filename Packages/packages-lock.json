@@ -1,11 +1,5 @@
 {
   "dependencies": {
-    "com.cysharp.unitask": {
-      "version": "file:UniTask",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
     "com.esotericsoftware.spine.spine-csharp": {
       "version": "file:SpineCSharp",
       "depth": 0,
