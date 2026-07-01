@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace ZStudio.SpineRemoteLoader {
     /// <summary>
@@ -6,10 +6,10 @@ namespace ZStudio.SpineRemoteLoader {
     /// </summary>
     public interface ISpineRemoteLoader {
         /// <summary>下载（或命中缓存）并创建一个播放实例。</summary>
-        UniTask<SpineRemoteLoadResult> LoadAndPlayAsync(SpineRemoteLoadOptions options);
+        Awaitable<SpineRemoteLoadResult> LoadAndPlayAsync(SpineRemoteLoadOptions options);
 
         /// <summary>仅下载并写入缓存，不创建实例。用于预热。</summary>
-        UniTask<bool> PrewarmAsync(SpineRemoteLoadOptions options);
+        Awaitable<bool> PrewarmAsync(SpineRemoteLoadOptions options);
 
         /// <summary>基于已缓存资源同步创建一个新实例（不触发网络）。缓存不存在时返回失败结果。</summary>
         SpineRemoteLoadResult CreateInstance(string cacheKey, SpineRemoteLoadOptions options);

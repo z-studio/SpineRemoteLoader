@@ -1,6 +1,6 @@
 using System;
 using System.Threading;
-using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace ZStudio.SpineRemoteLoader {
@@ -8,12 +8,12 @@ namespace ZStudio.SpineRemoteLoader {
     /// 基于 <see cref="UnityWebRequest"/> 的默认下载实现。
     /// </summary>
     public sealed class UnityWebRequestSpineDownloader : ISpineDownloader {
-        public async UniTask<byte[]> GetBytesAsync(string url, int timeoutSeconds, CancellationToken cancellationToken) {
+        public async Awaitable<byte[]> GetBytesAsync(string url, int timeoutSeconds, CancellationToken cancellationToken) {
             using var request = UnityWebRequest.Get(url);
             request.timeout = timeoutSeconds;
 
             try {
-                await request.SendWebRequest().ToUniTask(cancellationToken: cancellationToken);
+                await Awaitable.FromAsyncOperation(request.SendWebRequest(), cancellationToken);
             } catch (OperationCanceledException) {
                 throw;
             } catch (Exception e) {

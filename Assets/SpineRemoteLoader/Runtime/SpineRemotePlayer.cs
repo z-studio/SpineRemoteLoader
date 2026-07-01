@@ -1,5 +1,4 @@
 using System;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace ZStudio.SpineRemoteLoader {
@@ -37,11 +36,11 @@ namespace ZStudio.SpineRemoteLoader {
 
         private void Awake() {
             if (m_PlayOnAwake) {
-                PlayAsync().Forget();
+                _ = PlayAsync();
             }
         }
 
-        public async UniTask<SpineRemoteLoadResult> PlayAsync(IProgress<float> progress = null) {
+        public async Awaitable<SpineRemoteLoadResult> PlayAsync(IProgress<float> progress = null) {
             ReleaseCurrentInstance();
 
             var options = new SpineRemoteLoadOptions {
@@ -54,7 +53,7 @@ namespace ZStudio.SpineRemoteLoader {
                 useMemoryCache = m_UseMemoryCache,
                 pageImageUrls = m_PageImageUrls != null && m_PageImageUrls.Length > 0 ? m_PageImageUrls : null,
                 progress = progress,
-                cancellationToken = this.GetCancellationTokenOnDestroy()
+                cancellationToken = destroyCancellationToken
             };
 
             LastResult = await SpineRemoteLoader.Shared.LoadAndPlayAsync(options);

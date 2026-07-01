@@ -1,4 +1,3 @@
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace ZStudio.SpineRemoteLoader.Samples {
@@ -15,7 +14,7 @@ namespace ZStudio.SpineRemoteLoader.Samples {
 
         private SpineRemoteLoadResult m_Result;
 
-        private async UniTaskVoid Start() {
+        private async void Start() {
             SpineRemoteLog.sLevel = ESpineLogLevel.Info;
 
             var progress = new System.Progress<float>(p => SpineRemoteLog.Info($"加载进度: {p:P0}"));
@@ -27,7 +26,7 @@ namespace ZStudio.SpineRemoteLoader.Samples {
                 renderMode = m_RenderMode,
                 loop = true,
                 progress = progress,
-                cancellationToken = this.GetCancellationTokenOnDestroy()
+                cancellationToken = destroyCancellationToken
             });
 
             if (!m_Result.success) {

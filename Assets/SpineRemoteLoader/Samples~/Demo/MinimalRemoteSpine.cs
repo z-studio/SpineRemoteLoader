@@ -1,6 +1,5 @@
 using System;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using Spine.Unity;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -14,11 +13,11 @@ namespace ZStudio.SpineRemoteLoader.Samples {
     public sealed class MinimalRemoteSpine : MonoBehaviour {
         [SerializeField] private string m_Url = "https://cdn.example.com/spine/hero";
 
-        private async UniTaskVoid Start() {
-            await LoadAsync(m_Url, transform, this.GetCancellationTokenOnDestroy());
+        private async void Start() {
+            await LoadAsync(m_Url, transform, destroyCancellationToken);
         }
 
-        public static async UniTask<SkeletonGraphic> LoadAsync(string url, Transform parent, CancellationToken ct = default) {
+        public static async Awaitable<SkeletonGraphic> LoadAsync(string url, Transform parent, CancellationToken ct = default) {
             var skelBytes = await GetBytes($"{url}.skel", ct);
             var atlasBytes = await GetBytes($"{url}.atlas", ct);
             var pngBytes = await GetBytes($"{url}.png", ct);
@@ -53,14 +52,14 @@ namespace ZStudio.SpineRemoteLoader.Samples {
             return graphic;
         }
 
-        private static async UniTask<byte[]> GetBytes(string url, CancellationToken ct) {
+        private static async Awaitable<byte[]> GetBytes(string url, CancellationToken ct) {
             using var request = UnityWebRequest.Get(url);
 
             try {
-                await request.SendWebRequest().ToUniTask(cancellationToken: ct);
+                await Awaitable.FromAsyncOperation(request.SendWebRequest(), ct);
             } catch (OperationCanceledException) {
                 throw;
-            } catch (Exception) {
+            } catch (System.Exception) {
                 return null;
             }
 

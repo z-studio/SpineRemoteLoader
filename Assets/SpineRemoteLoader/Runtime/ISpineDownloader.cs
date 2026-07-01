@@ -1,5 +1,5 @@
 using System.Threading;
-using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace ZStudio.SpineRemoteLoader {
     /// <summary>
@@ -12,6 +12,6 @@ namespace ZStudio.SpineRemoteLoader {
         /// 失败时应返回 null（不要抛异常）；取消时应抛出 <see cref="System.OperationCanceledException"/>。
         /// 重试由上层负责，本方法只需完成一次请求。
         /// </summary>
-        UniTask<byte[]> GetBytesAsync(string url, int timeoutSeconds, CancellationToken cancellationToken);
+        Awaitable<byte[]> GetBytesAsync(string url, int timeoutSeconds, CancellationToken cancellationToken);
     }
 }

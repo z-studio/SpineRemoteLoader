@@ -1,13 +1,13 @@
 using System;
 using System.Threading;
-using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace ZStudio.SpineRemoteLoader {
     /// <summary>
     /// 在 <see cref="ISpineDownloader"/> 之上提供统一的重试逻辑。
     /// </summary>
     internal static class SpineRemoteDownloader {
-        public static async UniTask<byte[]> DownloadBytesAsync(
+        public static async Awaitable<byte[]> DownloadBytesAsync(
             ISpineDownloader downloader,
             string url,
             int timeoutSeconds,
@@ -42,7 +42,7 @@ namespace ZStudio.SpineRemoteLoader {
                 attempt++;
 
                 if (retryIntervalSeconds > 0f) {
-                    await UniTask.Delay(TimeSpan.FromSeconds(retryIntervalSeconds), cancellationToken: cancellationToken);
+                    await Awaitable.WaitForSecondsAsync(retryIntervalSeconds, cancellationToken);
                 }
             }
         }

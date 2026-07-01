@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Cysharp.Threading.Tasks;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace ZStudio.SpineRemoteLoader {
@@ -24,7 +24,7 @@ namespace ZStudio.SpineRemoteLoader {
         }
 
         private readonly SpineRemoteCache m_Cache = new();
-        private readonly Dictionary<string, UniTaskCompletionSource<SpineRemoteCacheEntry>> m_DownloadingTasks = new();
+        private readonly Dictionary<string, TaskCompletionSource<SpineRemoteCacheEntry>> m_DownloadingTasks = new();
 
         private ISpineDownloader m_Downloader;
         private SpineRemoteFetcher m_Fetcher;
@@ -53,7 +53,7 @@ namespace ZStudio.SpineRemoteLoader {
             s_Shared = null;
         }
 
-        public async UniTask<SpineRemoteLoadResult> LoadAndPlayAsync(SpineRemoteLoadOptions options) {
+        public async Awaitable<SpineRemoteLoadResult> LoadAndPlayAsync(SpineRemoteLoadOptions options) {
             var validationError = Validate(options, requireParent: true);
 
             if (validationError != null) {
@@ -78,7 +78,7 @@ namespace ZStudio.SpineRemoteLoader {
             }
         }
 
-        public async UniTask<bool> PrewarmAsync(SpineRemoteLoadOptions options) {
+        public async Awaitable<bool> PrewarmAsync(SpineRemoteLoadOptions options) {
             var validationError = Validate(options, requireParent: false);
 
             if (validationError != null) {
@@ -151,7 +151,7 @@ namespace ZStudio.SpineRemoteLoader {
 
         // ---------------------------------------------------------------------
 
-        private async UniTask<SpineRemoteCacheEntry> GetOrBuildEntryAsync(
+        private async Awaitable<SpineRemoteCacheEntry> GetOrBuildEntryAsync(
             SpineRemoteLoadOptions options,
             string cacheKey
         ) {
@@ -160,14 +160,13 @@ namespace ZStudio.SpineRemoteLoader {
                 return cached;
             }
 
-            // 同一 cacheKey 正在下载时，复用同一个完成源。
-            // 用 UniTaskCompletionSource 而非共享 UniTask：普通 UTCS 原生支持多个并发 await，
-            // 不受 UniTask 版本对 Preserve() 并发续延支持差异的影响。
+            // 同一 cacheKey 正在下载时，复用同一个 TaskCompletionSource。
+            // Awaitable 实例会被池化，不能安全地多次 await；Task 支持多个并发 awaiter。
             if (m_DownloadingTasks.TryGetValue(cacheKey, out var inFlight)) {
                 return await inFlight.Task;
             }
 
-            var tcs = new UniTaskCompletionSource<SpineRemoteCacheEntry>();
+            var tcs = new TaskCompletionSource<SpineRemoteCacheEntry>();
             m_DownloadingTasks[cacheKey] = tcs;
 
             try {
@@ -190,7 +189,7 @@ namespace ZStudio.SpineRemoteLoader {
             }
         }
 
-        private async UniTask<SpineRemoteCacheEntry> BuildEntryInternalAsync(
+        private async Awaitable<SpineRemoteCacheEntry> BuildEntryInternalAsync(
             SpineRemoteLoadOptions options,
             string cacheKey
         ) {

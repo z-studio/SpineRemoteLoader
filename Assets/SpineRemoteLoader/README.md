@@ -12,13 +12,11 @@
 - **健壮网络层**：超时、失败重试、`CancellationToken` 取消、进度回调
 - **正确的资源生命周期**：实例资源与共享资源分离，引用计数释放，无泄漏
 - **PMA 自适应**：根据 `.atlas` 的 `pma` 字段自动设置预乘 Alpha
-- **零侵入**：仅依赖 `spine-unity` 与 `UniTask`，不绑定任何业务框架
+- **零侵入**：仅依赖 `spine-unity`，不绑定任何业务框架
 
 ## 依赖
 
 - `com.esotericsoftware.spine.spine-unity` 4.2+
-- `com.cysharp.unitask` 2.5+
-- Unity 6000.0+
 
 ## 安装
 
@@ -79,7 +77,6 @@ await loader.LoadAndPlayAsync(options);
 
 ```csharp
 using ZStudio.SpineRemoteLoader;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public sealed class Demo : MonoBehaviour {
@@ -88,7 +85,7 @@ public sealed class Demo : MonoBehaviour {
 
     private SpineRemoteLoadResult m_Result;
 
-    private async UniTaskVoid Start() {
+    private async void Start() {
         m_Result = await SpineRemoteLoader.Shared.LoadAndPlayAsync(new SpineRemoteLoadOptions {
             url = "https://cdn.example.com/spine/hero",
             parent = m_Parent,
@@ -96,7 +93,7 @@ public sealed class Demo : MonoBehaviour {
             loop = true,
             renderMode = ESpineRenderMode.Graphic,
             format = ESpineSkeletonFormat.Binary,
-            cancellationToken = this.GetCancellationTokenOnDestroy(),
+            cancellationToken = destroyCancellationToken,
             progress = new System.Progress<float>(p => Debug.Log($"加载进度 {p:P0}"))
         });
 
@@ -146,7 +143,7 @@ await SpineRemoteLoader.Shared.PrewarmAsync(new SpineRemoteLoadOptions {
 
 ```csharp
 public sealed class BestHttpSpineDownloader : ISpineDownloader {
-    public async UniTask<byte[]> GetBytesAsync(string url, int timeoutSeconds, CancellationToken ct) {
+    public async Awaitable<byte[]> GetBytesAsync(string url, int timeoutSeconds, CancellationToken ct) {
         // 用 Best.HTTP 发起请求，失败返回 null，取消时抛 OperationCanceledException
         ...
     }
@@ -159,7 +156,7 @@ SpineRemoteLoader.Shared.Downloader = new BestHttpSpineDownloader();
 ## 日志
 
 ```csharp
-SpineRemoteLog.Level = ESpineLogLevel.Verbose; // 默认 Warning
+SpineRemoteLog.sLevel = ESpineLogLevel.Verbose; // 默认 Warning
 ```
 
 ## 已知限制

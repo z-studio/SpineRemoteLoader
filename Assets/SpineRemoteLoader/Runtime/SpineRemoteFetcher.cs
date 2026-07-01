@@ -1,6 +1,6 @@
 using System.Text;
 using System.Threading;
-using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace ZStudio.SpineRemoteLoader {
     /// <summary>
@@ -14,7 +14,7 @@ namespace ZStudio.SpineRemoteLoader {
             m_Downloader = downloader;
         }
 
-        public async UniTask<SpineRemoteRawData> FetchAsync(SpineRemoteLoadOptions options) {
+        public async Awaitable<SpineRemoteRawData> FetchAsync(SpineRemoteLoadOptions options) {
             options.progress?.Report(0f);
 
             var token = options.cancellationToken;
@@ -68,7 +68,7 @@ namespace ZStudio.SpineRemoteLoader {
             return raw;
         }
 
-        private UniTask<byte[]> Download(string url, SpineRemoteLoadOptions options, CancellationToken token) {
+        private Awaitable<byte[]> Download(string url, SpineRemoteLoadOptions options, CancellationToken token) {
             return SpineRemoteDownloader.DownloadBytesAsync(
                 m_Downloader,
                 url,
